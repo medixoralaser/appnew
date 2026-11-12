@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aesthetic Equipment CRM & Service Portal</title>
+    <title>Medixora CRM | Equipment, Service & Demo Portal</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,52 +13,50 @@
 
     <!-- CUSTOM STYLES MODULE -->
     <style>
-        /* Custom scrollbars and brand transition effects */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #020617;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #334155;
-        }
-        .brand-glow {
-            text-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        .brand-glow { text-shadow: 0 0 20px rgba(6, 182, 212, 0.25); }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen">
 
-    <div x-data="crmApp()" class="flex h-screen overflow-hidden">
+    <div x-data="crmApp()" x-init="initApp()" class="flex h-screen overflow-hidden">
         
         <!-- SIDEBAR NAVIGATION -->
         <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between hidden md:flex">
             <div>
                 <div class="p-6 border-b border-slate-800">
                     <h1 class="text-xl font-bold tracking-wider text-cyan-400 brand-glow">MEDIXORA CRM</h1>
-                    <p class="text-xs text-slate-400 mt-1">Equipment & Warranty Portal</p>
+                    <p class="text-xs text-slate-400 mt-1">Equipment, Demo & Service Portal</p>
                 </div>
-                <nav class="p-4 space-y-1">
-                    <button @click="activeTab = 'dashboard'" :class="navClass('dashboard')" class="w-full flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-r-lg">
-                        📊 Dashboard & Warranty
+                <nav class="p-4 space-y-1.5">
+                    <button @click="activeTab = 'dashboard'" :class="navClass('dashboard')" class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors rounded-r-lg">
+                        <span>📊 Equipment & Warranty</span>
+                        <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full" x-text="equipmentList.length"></span>
                     </button>
-                    <button @click="activeTab = 'service'" :class="navClass('service')" class="w-full flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-r-lg">
-                        🛠️ Service Request Form
+                    <button @click="activeTab = 'demos'" :class="navClass('demos')" class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors rounded-r-lg">
+                        <span>🎯 Demos & Ratings</span>
+                        <span x-show="upcomingDemosCount > 0" class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full" x-text="upcomingDemosCount"></span>
+                    </button>
+                    <button @click="activeTab = 'service'" :class="navClass('service')" class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors rounded-r-lg">
+                        <span>🛠️ Service Requests</span>
+                        <span x-show="openTicketsCount > 0" class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full" x-text="openTicketsCount"></span>
                     </button>
                     <button @click="activeTab = 'guidance'" :class="navClass('guidance')" class="w-full flex items-center px-4 py-3 text-sm font-medium transition-colors rounded-r-lg">
-                        📖 Equipment Care Guide
+                        <span>📖 Equipment Care Guide</span>
                     </button>
                 </nav>
             </div>
-            <div class="p-4 border-t border-slate-800 text-xs text-slate-500 flex items-center justify-between">
-                <span>System Status</span>
-                <span class="text-emerald-400 font-semibold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Online</span>
+            <div class="p-4 border-t border-slate-800 space-y-2">
+                <button @click="exportData()" class="w-full text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 px-3 rounded-lg transition text-center">
+                    ⬇️ Export Backup (JSON)
+                </button>
+                <div class="text-xs text-slate-500 flex items-center justify-between pt-1">
+                    <span>System Status</span>
+                    <span class="text-emerald-400 font-semibold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Saved Locally</span>
+                </div>
             </div>
         </aside>
 
@@ -68,25 +66,74 @@
             <!-- MOBILE HEADER -->
             <header class="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center md:hidden">
                 <h1 class="font-bold text-cyan-400">MEDIXORA CRM</h1>
-                <select x-model="activeTab" class="bg-slate-800 border border-slate-700 text-sm rounded p-1 text-slate-200 focus:outline-none">
-                    <option value="dashboard">Dashboard</option>
-                    <option value="service">Service Request</option>
+                <select x-model="activeTab" class="bg-slate-800 border border-slate-700 text-sm rounded p-1.5 text-slate-200 focus:outline-none">
+                    <option value="dashboard">Equipment & Warranty</option>
+                    <option value="demos">Demos & Ratings</option>
+                    <option value="service">Service Requests</option>
                     <option value="guidance">Care Guide</option>
                 </select>
             </header>
 
-            <main class="p-6 md:p-10 max-w-6xl w-full mx-auto">
+            <main class="p-6 md:p-10 max-w-6xl w-full mx-auto space-y-6">
+
+                <!-- ADVANCE UPCOMING DEMO BANNER (Visible across Dashboard & Demos) -->
+                <div x-show="upcomingDemos.length > 0 && (activeTab === 'dashboard' || activeTab === 'demos')" 
+                     class="bg-gradient-to-r from-cyan-950/80 to-slate-900 border border-cyan-500/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                    <div class="flex items-start sm:items-center gap-3">
+                        <span class="text-2xl">📅</span>
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-cyan-400">Upcoming Demo Alert</div>
+                            <p class="text-sm text-slate-200">
+                                Next Demo: <strong class="text-white" x-text="upcomingDemos[0].model"></strong> at 
+                                <strong class="text-cyan-300" x-text="upcomingDemos[0].clinic"></strong> — 
+                                <span class="font-mono text-xs bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded" x-text="formatDemoCountdown(upcomingDemos[0].demoDate)"></span>
+                                (Rep: <span class="text-slate-300 font-medium" x-text="upcomingDemos[0].employee"></span>)
+                            </p>
+                        </div>
+                    </div>
+                    <button @click="activeTab = 'demos'" class="text-xs bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-2 rounded-lg font-medium transition shrink-0">
+                        View All Demos →
+                    </button>
+                </div>
                 
-                <!-- TAB 1: DASHBOARD & WARRANTY -->
+                <!-- ========================================== -->
+                <!-- TAB 1: DASHBOARD & WARRANTY                -->
+                <!-- ========================================== -->
                 <div x-show="activeTab === 'dashboard'" class="space-y-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h2 class="text-2xl font-bold text-white">Registered Equipment & Warranties</h2>
-                            <p class="text-sm text-slate-400">Monitor live warranty statuses and registered clinics.</p>
+                            <p class="text-sm text-slate-400">Monitor live warranty statuses, registered clinics, and assigned employees.</p>
                         </div>
-                        <button @click="showAddModal = true" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 text-sm font-medium rounded-lg shadow-lg shadow-cyan-900/20 transition flex items-center justify-center gap-2">
+                        <button @click="showAddModal = true" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2.5 text-sm font-medium rounded-lg shadow-lg shadow-cyan-900/20 transition flex items-center justify-center gap-2">
                             <span>+</span> Register Device
                         </button>
+                    </div>
+
+                    <!-- Filter & Search Bar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Search Clinic / Serial / Model</label>
+                            <input type="text" x-model="searchQuery" placeholder="Type to search..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Filter by Employee</label>
+                            <select x-model="filterEmployee" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="ALL">All Employees</option>
+                                <template x-for="emp in employees" :key="emp">
+                                    <option :value="emp" x-text="emp"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Filter by Warranty Status</label>
+                            <select x-model="filterStatus" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="ALL">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Expiring Soon">Expiring Soon</option>
+                                <option value="Expired">Expired</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Equipment Table View -->
@@ -97,246 +144,233 @@
                                     <tr class="bg-slate-800/60 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
                                         <th class="p-4">Model & Serial</th>
                                         <th class="p-4">Clinic Name</th>
-                                        <th class="p-4">Purchase Date</th>
-                                        <th class="p-4">Warranty Expiry</th>
+                                        <th class="p-4">Submitted By</th>
+                                        <th class="p-4">Purchase / Expiry</th>
                                         <th class="p-4">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-800 text-sm">
-                                    <template x-for="item in equipmentList" :key="item.serial">
+                                    <template x-for="item in filteredEquipment" :key="item.serial">
                                         <tr class="hover:bg-slate-800/40 transition">
                                             <td class="p-4">
                                                 <div class="font-medium text-white" x-text="item.model"></div>
                                                 <div class="text-xs text-slate-400 font-mono" x-text="item.serial"></div>
                                             </td>
                                             <td class="p-4 text-slate-300" x-text="item.clinic"></td>
-                                            <td class="p-4 text-slate-300 font-mono text-xs" x-text="item.purchaseDate"></td>
-                                            <td class="p-4 text-slate-300 font-mono text-xs" x-text="item.expiryDate"></td>
+                                            <td class="p-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-cyan-300 border border-slate-700">
+                                                    👤 <span x-text="item.employee || 'Unassigned'"></span>
+                                                </span>
+                                            </td>
+                                            <td class="p-4 font-mono text-xs">
+                                                <div class="text-slate-400">In: <span class="text-slate-300" x-text="item.purchaseDate"></span></div>
+                                                <div class="text-slate-400">Exp: <span class="text-slate-200" x-text="item.expiryDate"></span></div>
+                                            </td>
                                             <td class="p-4">
                                                 <span class="px-3 py-1 text-xs font-semibold rounded-full border"
-                                                      :class="badgeClass(item.status)"
-                                                      x-text="item.status">
+                                                      :class="badgeClass(calculateStatus(item.expiryDate))"
+                                                      x-text="calculateStatus(item.expiryDate)">
                                                 </span>
                                             </td>
                                         </tr>
                                     </template>
+                                    <tr x-show="filteredEquipment.length === 0">
+                                        <td colspan="5" class="p-8 text-center text-slate-500 text-sm">No matching equipment found for this filter.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 2: SERVICE REQUEST FORM -->
-                <div x-show="activeTab === 'service'" class="space-y-6 max-w-2xl">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">New Service Request</h2>
-                        <p class="text-sm text-slate-400">Log a support ticket or request technical assistance for a device.</p>
+                <!-- ========================================== -->
+                <!-- TAB 2: UPCOMING DEMOS & POST-DEMO RATINGS  -->
+                <!-- ========================================== -->
+                <div x-show="activeTab === 'demos'" class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">Clinic Demos & Post-Demo Ratings</h2>
+                            <p class="text-sm text-slate-400">Track upcoming machine demonstrations in advance and rate clinic feedback afterward.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <select x-model="filterEmployee" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="ALL">All Employees</option>
+                                <template x-for="emp in employees" :key="emp">
+                                    <option :value="emp" x-text="emp"></option>
+                                </template>
+                            </select>
+                            <button @click="showDemoModal = true" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 text-sm font-medium rounded-lg shadow-lg shadow-cyan-900/20 transition flex items-center gap-2">
+                                <span>+</span> Schedule Demo
+                            </button>
+                        </div>
                     </div>
 
-                    <form @submit.prevent="submitTicket" class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl space-y-4">
+                    <!-- Demos Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <template x-for="demo in filteredDemos" :key="demo.id">
+                            <div class="bg-slate-900 border rounded-xl p-5 flex flex-col justify-between space-y-4 shadow-lg transition"
+                                 :class="demo.completed ? 'border-slate-800' : 'border-cyan-500/40'">
+                                
+                                <div class="space-y-2">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div>
+                                            <span class="text-xs font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full border"
+                                                  :class="demo.completed ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'"
+                                                  x-text="demo.completed ? '✓ Demo Completed' : formatDemoCountdown(demo.demoDate)">
+                                            </span>
+                                            <h3 class="text-lg font-bold text-white mt-2" x-text="demo.clinic"></h3>
+                                            <p class="text-xs text-slate-400">Doctor/Contact: <span class="text-slate-200" x-text="demo.doctor"></span></p>
+                                        </div>
+                                        <span class="text-xs bg-slate-800 text-cyan-300 px-2.5 py-1 rounded border border-slate-700">
+                                            👤 <span x-text="demo.employee"></span>
+                                        </span>
+                                    </div>
+
+                                    <div class="bg-slate-950/80 border border-slate-800/80 rounded-lg p-3 text-xs space-y-1">
+                                        <div class="flex justify-between">
+                                            <span class="text-slate-400">Machine:</span>
+                                            <span class="font-semibold text-white" x-text="demo.model"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-slate-400">Scheduled Date:</span>
+                                            <span class="font-mono text-slate-200" x-text="demo.demoDate + ' (' + demo.demoTime + ')'"></span>
+                                        </div>
+                                        <div x-show="demo.notes" class="pt-1 border-t border-slate-800 text-slate-300">
+                                            <span class="text-slate-400">Notes:</span> <span x-text="demo.notes"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Post-Demo Rating Display OR Action Button -->
+                                <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
+                                    <template x-if="demo.completed">
+                                        <div class="w-full space-y-1">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-1 text-amber-400 text-base">
+                                                    <template x-for="star in 5">
+                                                        <span x-text="star <= demo.rating ? '★' : '☆'"></span>
+                                                    </template>
+                                                    <span class="text-xs text-slate-400 ml-1" x-text="'(' + demo.rating + '/5)'"></span>
+                                                </div>
+                                                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-cyan-300" x-text="demo.outcome"></span>
+                                            </div>
+                                            <p x-show="demo.feedback" class="text-xs text-slate-400 italic" x-text="'“' + demo.feedback + '”'"></p>
+                                        </div>
+                                    </template>
+
+                                    <template x-if="!demo.completed">
+                                        <button @click="openRateModal(demo)" class="w-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 py-2 px-3 rounded-lg text-xs font-semibold transition">
+                                            ★ Mark Demo Complete & Rate
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- TAB 3: SERVICE REQUESTS & TICKET LOG       -->
+                <!-- ========================================== -->
+                <div x-show="activeTab === 'service'" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <!-- Left: New Ticket Form -->
+                    <div class="lg:col-span-5 space-y-4">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Clinic / Contact Email</label>
-                            <input type="email" x-model="form.email" required placeholder="clinic@example.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition">
+                            <h2 class="text-xl font-bold text-white">New Service Request</h2>
+                            <p class="text-xs text-slate-400">Log a support ticket under your employee name.</p>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Select Equipment</label>
-                            <select x-model="form.serial" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition">
-                                <option value="">-- Choose registered device --</option>
-                                <template x-for="item in equipmentList" :key="item.serial">
-                                    <option :value="item.serial" x-text="item.model + ' (' + item.serial + ')' "></option>
+                        <form @submit.prevent="submitTicket" class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Submitted By (Employee)</label>
+                                <select x-model="form.employee" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                                    <option value="">-- Select Employee --</option>
+                                    <template x-for="emp in employees" :key="emp">
+                                        <option :value="emp" x-text="emp"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Clinic / Contact Email</label>
+                                <input type="email" x-model="form.email" required placeholder="clinic@example.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Select Equipment</label>
+                                <select x-model="form.serial" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                                    <option value="">-- Choose registered device --</option>
+                                    <template x-for="item in equipmentList" :key="item.serial">
+                                        <option :value="item.serial" x-text="item.model + ' (' + item.serial + ') - ' + item.clinic"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Issue Category</label>
+                                <select x-model="form.category" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
+                                    <option value="Handpiece / Applicator Issue">Handpiece / Applicator Issue</option>
+                                    <option value="System Power / Won't Turn On">System Power / Won't Turn On</option>
+                                    <option value="Cooling / Overheating Error">Cooling / Overheating Error</option>
+                                    <option value="Software / Display Error">Software / Display Error</option>
+                                    <option value="Annual Calibration">Annual Calibration</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Description & Error Codes</label>
+                                <textarea x-model="form.description" rows="3" required placeholder="Describe symptoms or error codes..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"></textarea>
+                            </div>
+
+                            <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium p-3 rounded-lg shadow-lg shadow-cyan-900/20 transition">
+                                Submit Service Ticket
+                            </button>
+                        </form>
+
+                        <div x-show="submittedSuccess" x-transition class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl text-emerald-400 text-xs">
+                            ✓ Ticket logged! ID: <span class="font-mono font-bold" x-text="newTicketId"></span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Logged Tickets Queue -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-xl font-bold text-white">Submitted Service Tickets</h2>
+                                <p class="text-xs text-slate-400">Filter tickets by employee and track resolution.</p>
+                            </div>
+                            <select x-model="filterEmployee" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none">
+                                <option value="ALL">All Employees</option>
+                                <template x-for="emp in employees" :key="emp">
+                                    <option :value="emp" x-text="emp"></option>
                                 </template>
                             </select>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Issue Category</label>
-                            <select x-model="form.category" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition">
-                                <option value="Handpiece / Applicator Issue">Handpiece / Applicator Issue</option>
-                                <option value="System Power / Won't Turn On">System Power / Won't Turn On</option>
-                                <option value="Cooling / Overheating Error">Cooling / Overheating Error</option>
-                                <option value="Software / Display Error">Software / Display Error</option>
-                                <option value="Annual Calibration">Annual Calibration</option>
-                            </select>
+                        <div class="space-y-3">
+                            <template x-for="ticket in filteredTickets" :key="ticket.id">
+                                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-mono text-xs font-bold text-cyan-400" x-text="ticket.id"></span>
+                                            <span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded">👤 <span x-text="ticket.employee"></span></span>
+                                        </div>
+                                        <button @click="toggleTicketStatus(ticket)" 
+                                                class="text-xs px-2.5 py-1 rounded-full font-semibold border transition"
+                                                :class="ticket.status === 'Open' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'"
+                                                x-text="ticket.status === 'Open' ? '⏳ Open (Click to Resolve)' : '✓ Resolved'">
+                                        </button>
+                                    </div>
+                                    <div class="text-sm font-semibold text-white" x-text="ticket.category + ' — ' + ticket.serial"></div>
+                                    <p class="text-xs text-slate-300" x-text="ticket.description"></p>
+                                    <div class="text-[11px] text-slate-500 flex justify-between pt-1">
+                                        <span x-text="ticket.email"></span>
+                                        <span x-text="ticket.date"></span>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="filteredTickets.length === 0" class="bg-slate-900/50 border border-slate-800 rounded-xl p-8 text-center text-slate-500 text-sm">
+                                No service tickets logged for this filter yet.
+                            </div>
                         </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Description & Error Codes</label>
-                            <textarea x-model="form.description" rows="4" required placeholder="Describe what error code is showing or what symptoms the laser is experiencing..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition"></textarea>
-                        </div>
-
-                        <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium p-3 rounded-lg shadow-lg shadow-cyan-900/20 transition">
-                            Submit Service Ticket
-                        </button>
-                    </form>
-
-                    <!-- Success Feedback Box -->
-                    <div x-show="submittedSuccess" x-transition class="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl text-emerald-400 text-sm">
-                        ✓ Service ticket successfully created! Our technician team has been notified. Ticket ID: <span class="font-mono font-bold" x-text="newTicketId"></span>
-                    </div>
-                </div>
-
-                <!-- TAB 3: GUIDANCE MODULE -->
-                <div x-show="activeTab === 'guidance'" class="space-y-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">Aesthetic Laser Care & Maintenance Guide</h2>
-                        <p class="text-sm text-slate-400">Share these protocols with clinics to maximize machine lifespan and reduce warranty claims.</p>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Card 1 -->
-                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3 shadow-lg">
-                            <h3 class="text-lg font-semibold text-cyan-400">💡 Daily Startup & Shutdown</h3>
-                            <ul class="text-sm text-slate-300 space-y-2 list-disc list-inside">
-                                <li>Allow full boot cycle and internal self-checks to finish before launching treatment parameters.</li>
-                                <li>Never cut main wall power abruptly while internal cooling fans are still winding down.</li>
-                                <li>Ensure a clearance of at least 6–12 inches around system ventilation exhausts.</li>
-                            </ul>
-                        </div>
-
-                        <!-- Card 2 -->
-                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3 shadow-lg">
-                            <h3 class="text-lg font-semibold text-cyan-400">💎 Handpiece & Optic Care</h3>
-                            <ul class="text-sm text-slate-300 space-y-2 list-disc list-inside">
-                                <li>Clean sapphire/quartz treatment windows with 70% isopropyl alcohol wipes after every patient.</li>
-                                <li>Never drop, swing, or pull the handpiece fiber optic umbilical cord too tightly.</li>
-                                <li>Always store handpieces in designated secure holsters immediately after use.</li>
-                            </ul>
-                        </div>
-
-                        <!-- Card 3 -->
-                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3 shadow-lg">
-                            <h3 class="text-lg font-semibold text-cyan-400">⚡ Electrical Protection</h3>
-                            <ul class="text-sm text-slate-300 space-y-2 list-disc list-inside">
-                                <li>Always connect high-power aesthetic lasers to a dedicated circuit with an approved stabilizer/UPS.</li>
-                                <li>Avoid using extension cords or multi-plug splitters which can cause voltage drops and power supply failures.</li>
-                            </ul>
-                        </div>
-
-                        <!-- Card 4 -->
-                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3 shadow-lg">
-                            <h3 class="text-lg font-semibold text-cyan-400">🛠️ Scheduled Maintenance</h3>
-                            <ul class="text-sm text-slate-300 space-y-2 list-disc list-inside">
-                                <li><strong class="text-white">Monthly:</strong> Inspect and clean dust intake filters.</li>
-                                <li><strong class="text-white">Every 6 Months:</strong> Check output calibration levels with an optical meter.</li>
-                                <li><strong class="text-white">Annually:</strong> Complete coolant flush (distilled/deionized water replacement) and safety check.</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-            </main>
-        </div>
-
-        <!-- ADD EQUIPMENT MODAL -->
-        <div x-show="showAddModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div @click.away="showAddModal = false" class="bg-slate-900 border border-slate-800 w-full max-w-md p-6 rounded-2xl space-y-4 shadow-2xl">
-                <h3 class="text-lg font-bold text-white">Register New Equipment</h3>
-                <form @submit.prevent="addEquipment" class="space-y-3">
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase">Model Name</label>
-                        <input type="text" x-model="newEq.model" required placeholder="e.g. Medixora Sonolift Pro 10D" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase">Serial Number</label>
-                        <input type="text" x-model="newEq.serial" required placeholder="e.g. MX-SL-8842" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase">Clinic Name</label>
-                        <input type="text" x-model="newEq.clinic" required placeholder="e.g. DermaCare Glow Clinic" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase">Purchase Date</label>
-                            <input type="date" x-model="newEq.purchaseDate" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase">Warranty Expiry</label>
-                            <input type="date" x-model="newEq.expiryDate" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-                        </div>
-                    </div>
-                    <div class="flex justify-end space-x-2 pt-3">
-                        <button type="button" @click="showAddModal = false" class="px-4 py-2 text-sm bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition">Cancel</button>
-                        <button type="submit" class="px-4 py-2 text-sm bg-cyan-600 text-white rounded-lg hover:bg-cyan-500 transition">Save Equipment</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- JAVASCRIPT LOGIC MODULE -->
-    <script>
-        function crmApp() {
-            return {
-                activeTab: 'dashboard',
-                showAddModal: false,
-                submittedSuccess: false,
-                newTicketId: '',
-                
-                // Sample initial equipment list
-                equipmentList: [
-                    { model: 'Medixora Sonolift Pro 10D', serial: 'MX-SL-9021', clinic: 'Aura Skin & Laser Studio', purchaseDate: '2025-02-15', expiryDate: '2027-02-15', status: 'Active' },
-                    { model: 'PicoSpectra P Q-Switch', serial: 'MX-PS-4412', clinic: 'SkinVogue Aesthetics', purchaseDate: '2025-08-10', expiryDate: '2026-09-20', status: 'Expiring Soon' },
-                    { model: 'Ximer UVPro308 Excimer', serial: 'MX-XM-1109', clinic: 'DermaPrime Clinic', purchaseDate: '2023-01-05', expiryDate: '2025-01-05', status: 'Expired' }
-                ],
-                
-                // Service Request Form Model
-                form: {
-                    email: '',
-                    serial: '',
-                    category: 'Handpiece / Applicator Issue',
-                    description: ''
-                },
-                
-                // New Equipment Modal Model
-                newEq: {
-                    model: '',
-                    serial: '',
-                    clinic: '',
-                    purchaseDate: '',
-                    expiryDate: ''
-                },
-
-                // Dynamic Sidebar Navigation Styling Helper
-                navClass(tabName) {
-                    return this.activeTab === tabName 
-                        ? 'bg-cyan-500/10 text-cyan-400 border-l-4 border-cyan-400' 
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200';
-                },
-
-                // Status Badge Color Helper
-                badgeClass(status) {
-                    if (status === 'Active') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-                    if (status === 'Expiring Soon') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                    return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-                },
-
-                // Submit Service Ticket Action
-                submitTicket() {
-                    this.newTicketId = 'SR-' + Math.floor(100000 + Math.random() * 900000);
-                    this.submittedSuccess = true;
-                    setTimeout(() => {
-                        this.form = { email: '', serial: '', category: 'Handpiece / Applicator Issue', description: '' };
-                        this.submittedSuccess = false;
-                    }, 5000);
-                },
-
-                // Add Equipment Action
-                addEquipment() {
-                    this.equipmentList.push({
-                        model: this.newEq.model,
-                        serial: this.newEq.serial,
-                        clinic: this.newEq.clinic,
-                        purchaseDate: this.newEq.purchaseDate,
-                        expiryDate: this.newEq.expiryDate,
-                        status: 'Active'
-                    });
-                    this.newEq = { model: '', serial: '', clinic: '', purchaseDate: '', expiryDate: '' };
-                    this.showAddModal = false;
-                }
-            }
-        }
-    </script>
-</body>
-</html>
